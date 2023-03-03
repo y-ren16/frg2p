@@ -2,6 +2,9 @@ import os
 from tqdm import tqdm
 from phonemizer.backend import EspeakBackend
 import re
+import requests
+from phonemizer import phonemize
+from phonemizer.separator import Separator
 
 in_dir = '../All_Data/Data/BC2023'
 # speaker = 'NEB'
@@ -39,22 +42,40 @@ def main():
     sum_num = len(all_text)
     print(sum_num)
 
-    backend_type = ['fr-fr', 'mb-fr1']
-
-    for BT in backend_type:
-        backend = EspeakBackend(language=BT)
-        phonemized = backend.phonemize(all_text)
-
+    language_type = ['fr-fr', 'mb-fr1', 'mb-fr2', 'mb-fr3', 'mb-fr4', 'mb-fr5', 'mb-fr6', 'mb-fr7']
+    backend_type = ['espeak', 'espeak-mbrola', 'espeak-mbrola', 'espeak-mbrola', 'espeak-mbrola',
+                    'espeak-mbrola', 'espeak-mbrola', 'espeak-mbrola']
+    english = []
+    for i in range(len(language_type)):
+        # backend = EspeakBackend(language=BT)
+        # phonemized = backend.phonemize(all_text)
+        phonemized = phonemize(
+            all_text,
+            language=language_type[i],
+            backend=backend_type[i],
+            separator=Separator(phone=None, word=' ', syllable='|'),
+            strip=True,
+            preserve_punctuation=True,
+            njobs=4)
+        en_line = []
         with open(
-                os.path.join(out_dir, speaker + '_' + BT + '.txt'), "w",
+                os.path.join(out_dir, speaker + '_' + language_type[i] + '.txt'), "w",
         ) as f1:
-            for i in tqdm(range(sum_num)):
+            for j in tqdm(range(sum_num)):
                 en2fr = re.compile(r'\(en\)(.*?)\(fr\)')
-                matchEn = re.search(en2fr, phonemized[i], flags=0)
-                if matchEn is not None:
-                    print(phonemized[i])
-                else:
-                    f1.write(all_text[i] + '|' + phonemized[i] + '\n')
+                match_en = re.search(en2fr, phonemized[j], flags=0)
+                if match_en is not None:
+                    # print(phonemized[j])
+                    en_line.append(str(j) + '|' + all_text[j] + '|' + phonemized[j])
+                f1.write(all_text[j] + '|' + phonemized[j] + '\n')
+        english.append(en_line)
+    with open(
+            os.path.join(out_dir, speaker + '_english.txt'), "w",
+    ) as f1:
+        for i in range(len(language_type)):
+            f1.write('**********' + language_type[i] + '**********\n')
+            for j in range(len(english[i])):
+                f1.write(english[i][j] + '\n')
 
 
 if __name__ == "__main__":

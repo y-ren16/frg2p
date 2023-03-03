@@ -11,6 +11,52 @@ in_dir = '../All_Data/Data/BC2023'
 speaker = 'AD'
 out_dir = '../G2pData'
 os.makedirs(out_dir, exist_ok=True)
+ISC_convert_name = 'IPA-SAMPA-CPA.txt'
+
+def read_ISC(ISC_path):
+    I2C = {}
+    C2I = {}
+    S2I = {}
+    S2C = {}
+    with open(ISC_path) as f:
+        for line in f:
+            temp = re.split(r"\s+", line.strip("\n"))
+            IPA = temp[0]
+            SAMPA = temp[1]
+            CPA = temp[2]
+            I2C[IPA] = CPA
+            C2I[CPA] = IPA
+            S2I[SAMPA] = IPA
+            S2C[SAMPA] = CPA
+    return I2C, C2I, S2I, S2C
+
+
+def SAMPA2IPA(SAMPA):
+    I2C, C2I, S2I, S2C = read_ISC(os.path.join('./', ISC_convert_name))
+    IPA = []
+    for SAMPA_i in SAMPA:
+        IPA_now = ''
+        skip = False
+        for j in range(len(SAMPA_i)):
+            if skip == True:
+                skip = False
+                continue
+            if j == len(SAMPA_i)-1:
+                IPA_now = IPA_now + S2I[SAMPA_i[j]] + ' '
+            elif SAMPA_i[j+1] == '~':
+                if SAMPA_i[j] == 'o':
+                    IPA_now = IPA_now + S2I['O~'] + ' '
+                elif SAMPA_i[j] == 'e':
+                    IPA_now = IPA_now + S2I['E~'] + ' '
+                elif SAMPA_i[j] == 'a':
+                    IPA_now = IPA_now + S2I['A~'] + ' '
+                else:
+                    IPA_now = IPA_now + S2I[SAMPA_i[j]+'~'] + ' '
+                skip = True
+            else:
+                IPA_now = IPA_now + S2I[SAMPA_i[j]] + ' '
+        IPA.append(IPA_now)
+    return IPA
 
 
 def main():
@@ -58,6 +104,8 @@ def main():
             preserve_punctuation=True,
             njobs=4)
         en_line = []
+        if backend_type[i] == 'espeak-mbrola':
+            phonemized = SAMPA2IPA(phonemized)
         with open(
                 os.path.join(out_dir, speaker + '_' + language_type[i] + '.txt'), "w",
         ) as f1:
@@ -67,6 +115,7 @@ def main():
                 if match_en is not None:
                     # print(phonemized[j])
                     en_line.append(str(j) + '|' + all_text[j] + '|' + phonemized[j])
+
                 f1.write(all_text[j] + '|' + phonemized[j] + '\n')
         english.append(en_line)
     with open(

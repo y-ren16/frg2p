@@ -5,8 +5,11 @@ import re
 import requests
 from phonemizer import phonemize
 from phonemizer.separator import Separator
+from phonemizer.backend import EspeakMbrolaBackend
+backend = EspeakMbrolaBackend(language='mb-fr2')
 
 in_dir = '../All_Data/Data/BC2023'
+# speaker = 'NEB'
 # speaker = 'NEB'
 speaker = 'AD'
 out_dir = '../G2pData'
@@ -92,22 +95,59 @@ def main():
     backend_type = ['espeak', 'espeak-mbrola', 'espeak-mbrola', 'espeak-mbrola', 'espeak-mbrola',
                     'espeak-mbrola', 'espeak-mbrola', 'espeak-mbrola']
     english = []
-    for i in range(len(language_type)):
-        # backend = EspeakBackend(language=BT)
+    os.makedirs(os.path.join(out_dir, speaker), exist_ok=True)
+    for ii in range(len(language_type)):
+        # from phonemizer.backend import EspeakMbrolaBackend
+        # backend = EspeakMbrolaBackend(language='mb-fr2')
         # phonemized = backend.phonemize(all_text)
-        phonemized = phonemize(
-            all_text,
-            language=language_type[i],
-            backend=backend_type[i],
-            separator=Separator(phone=None, word=' ', syllable='|'),
-            strip=True,
-            preserve_punctuation=True,
-            njobs=4)
+        if ii!=2:
+            continue
+        # phonemized = phonemize(
+        #     all_text,
+        #     language=language_type[i],
+        #     backend=backend_type[i],
+        #     separator=Separator(phone=None, word=' ', syllable='|'),
+        #     strip=True,
+        #     preserve_punctuation=True,
+        #     njobs=4)
+        phonemized = backend.phonemize(all_text)
         en_line = []
-        if backend_type[i] == 'espeak-mbrola':
+
+        # for line in range(len(phonemized)):
+        #     with open(
+        #             os.path.join(out_dir, speaker, "{}.lab".format(all_name_new[line])),
+        #             "w",
+        #     ) as f1:
+        #         f1.write(phonemized[line])
+        
+        os.makedirs(os.path.join(out_dir, speaker), exist_ok=True)  
+        train_resources = 'train.txt'
+        valid_resources = 'valid.txt'
+        test_resources = 'test.txt'
+        ttv = {'AD': [2293, 2443],'NEB': [60000, 63200]}
+        with open(
+                os.path.join(out_dir, speaker, train_resources), "w",
+            ) as f1:
+            for i in range(len(all_text)):
+                if(i<int(ttv[speaker][0])):
+                    f1.write(all_name_new[i] + '.wav' + '|' + all_text[i] + '|' + phonemized[i] + '\n')
+        with open(
+                os.path.join(out_dir, speaker, test_resources), "w",
+            ) as f1:
+            for i in range(len(all_text)):
+                if(i>=int(ttv[speaker][0]))&(i<int(ttv[speaker][1])):
+                    f1.write(all_name_new[i] + '.wav' + '|' + all_text[i] + '|' + phonemized[i] + '\n')
+        with open(
+                os.path.join(out_dir, speaker, valid_resources), "w",
+            ) as f1:
+            for i in range(len(all_text)):
+                if(i>=int(ttv[speaker][1])):
+                    f1.write(all_name_new[i] + '.wav' + '|' + all_text[i] + '|' + phonemized[i] + '\n')
+
+        if backend_type[ii] == 'espeak-mbrola':
             phonemized = SAMPA2IPA(phonemized)
         with open(
-                os.path.join(out_dir, speaker + '_' + language_type[i] + '.txt'), "w",
+                os.path.join(out_dir, speaker + '_' + language_type[ii] + '.txt'), "w",
         ) as f1:
             for j in tqdm(range(sum_num)):
                 en2fr = re.compile(r'\(en\)(.*?)\(fr\)')
@@ -118,13 +158,13 @@ def main():
 
                 f1.write(all_text[j] + '|' + phonemized[j] + '\n')
         english.append(en_line)
-    with open(
-            os.path.join(out_dir, speaker + '_english.txt'), "w",
-    ) as f1:
-        for i in range(len(language_type)):
-            f1.write('**********' + language_type[i] + '**********\n')
-            for j in range(len(english[i])):
-                f1.write(english[i][j] + '\n')
+    # with open(
+    #         os.path.join(out_dir, speaker + '_english.txt'), "w",
+    # ) as f1:
+    #     for i in range(len(language_type)):
+    #         f1.write('**********' + language_type[i] + '**********\n')
+    #         for j in range(len(english[i])):
+    #             f1.write(english[i][j] + '\n')
 
 
 if __name__ == "__main__":

@@ -9,8 +9,8 @@ import numpy as np
 
 raw_dir = '../All_Data/blizzard_challenge_2023'
 in_dir = '../All_Data/Data'
-speaker = 'NEB'
-# speaker = 'AD'
+# speaker = 'NEB'
+speaker = 'AD'
 out_dir = '../G2pData'
 
 os.makedirs(os.path.join(out_dir,speaker), exist_ok=True)
@@ -56,11 +56,11 @@ def main():
             all_text.append(text)
             all_name_new.append(base_name_new)
 
-            wav_path_raw = os.path.join(raw_dir, "{}.wav".format(base_name))
-            audio = AudioSegment.from_file(wav_path_raw, "wav")
-            audio_clip = audio[ss:ee]
-            wav_path = os.path.join(in_dir, speaker, "wavs", "{}.wav".format(base_name_new))
-            audio_clip.export(wav_path, format="wav")
+            # wav_path_raw = os.path.join(raw_dir, "{}.wav".format(base_name))
+            # audio = AudioSegment.from_file(wav_path_raw, "wav")
+            # audio_clip = audio[ss:ee]
+            # wav_path = os.path.join(in_dir, speaker, "wavs", "{}.wav".format(base_name_new))
+            # audio_clip.export(wav_path, format="wav")
 
 
     sum_num = len(all_text)
@@ -71,30 +71,46 @@ def main():
     print("too_short_num ", too_short_num)
     assert len(all_text) == len(all_name_new)
 
-    backend = EspeakBackend(language='fr-fr', preserve_punctuation=True, language_switch='remove-utterance')
+    # backend = EspeakBackend(language='fr-fr', preserve_punctuation=True, language_switch='remove-utterance')
+    backend = EspeakBackend(language='fr-fr', preserve_punctuation=True)
 
     phonemized = backend.phonemize(all_text)
-    print("en-fr num ", sum_num - len(phonemized))
+    # print("en-fr num ", sum_num - len(phonemized))
 
     train_resources = 'train.txt'
     valid_resources = 'valid.txt'
     test_resources = 'test.txt'
+
+    final_name = []
+    final_text = []
+    final_phonemized = []
+    for i in range(sum_num):
+        _en2fr = re.compile(r'\(en\)(.*?)\(fr\)')
+        match_en = re.search(_en2fr, phonemized[i], flags=0)
+        if match_en is not None:
+            continue
+        final_name.append(all_name_new[i])
+        final_text.append(all_text[i])
+        final_phonemized.append(phonemized[i])
+    assert len(final_text) == len(final_phonemized) == len(final_name)
+    print("en-fr num ", sum_num - len(final_phonemized))
+    sum_num_new = len(final_text)
     
     with open(os.path.join(out_dir, speaker, train_resources), 'w', encoding='utf-8') as f1:
-        for i in range(sum_num):
-            if i > 0.8 * sum_num:
+        for i in range(sum_num_new):
+            if i > 0.8 * sum_num_new:
                 break
-            f1.write(f"{all_name_new[i]}.wav|{all_text[i]}|{phonemized[i]}" + "\n")
+            f1.write(f"{final_name[i]}.wav|{final_text[i]}|{final_phonemized[i]}" + "\n")
     with open(os.path.join(out_dir, speaker, valid_resources), 'w', encoding='utf-8') as f2:
-        for i in range(sum_num):
-            if i < 0.8 * sum_num or i > 0.9 * sum_num:
+        for i in range(sum_num_new):
+            if i < 0.8 * sum_num_new or i > 0.9 * sum_num_new:
                 continue
-            f2.write(f"{all_name_new[i]}.wav|{all_text[i]}|{phonemized[i]}" + "\n")
+            f2.write(f"{final_name[i]}.wav|{final_text[i]}|{final_phonemized[i]}" + "\n")
     with open(os.path.join(out_dir, speaker, test_resources), 'w', encoding='utf-8') as f3:
-        for i in range(sum_num):
-            if i < 0.9 * sum_num:
+        for i in range(sum_num_new):
+            if i < 0.9 * sum_num_new:
                 continue
-            f3.write(f"{all_name_new[i]}.wav|{all_text[i]}|{phonemized[i]}" + "\n")
+            f3.write(f"{final_name[i]}.wav|{final_text[i]}|{final_phonemized[i]}" + "\n")
 
 
 if __name__ == "__main__":

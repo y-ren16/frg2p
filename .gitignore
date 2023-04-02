@@ -7,6 +7,9 @@
 *.png
 *.wav
 *.txt
+*.csv
+*.DS_Store
+*.xlsx
 
 *.log
 

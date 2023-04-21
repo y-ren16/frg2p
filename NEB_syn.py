@@ -7,8 +7,16 @@ from phonemizer.backend import EspeakMbrolaBackend
 backend2 = EspeakMbrolaBackend(language='mb-fr2')
 import numpy as np
 
-raw_dir = "2023-FH1_submission_directory/NEB_test/NEB_test.csv"
-out_dir = "2023-FH1_submission_directory/NEB_test/NEB_test.txt"
+# raw_dir = "2023-FH1_submission_directory/NEB_test/NEB_test.csv"
+# out_dir = "2023-FH1_submission_directory/NEB_test/NEB_test.txt"
+# raw_dir = "2023-FH1_submission_directory/NEB_test_homos/NEB_test_homos.csv"
+# out_dir = "2023-FH1_submission_directory/NEB_test_homos/NEB_test_homos.txt"
+# raw_dir = "2023-FH1_submission_directory/NEB_test_list/NEB_test_list.csv"
+# out_dir = "2023-FH1_submission_directory/NEB_test_list/NEB_test_list.txt"
+# raw_dir = "2023-FH1_submission_directory/NEB_test_sus/NEB_test_sus.csv"
+# out_dir = "2023-FH1_submission_directory/NEB_test_sus/NEB_test_sus.txt"
+raw_dir = "2023-FH1_submission_directory/NEB_test_par/NEB_raw_test_par.txt"
+out_dir = "2023-FH1_submission_directory/NEB_test_par/NEB_test_par.txt"
 
 ISC_convert_name = 'IPA-SAMPA-CPA.txt'
 def read_ISC(ISC_path):
@@ -109,6 +117,7 @@ def main():
     with open(out_dir, "w", encoding="utf-8") as f:
         for i in range(sum_num):
             if name[i] in error:
+                f.write(f"{name[i]}|{raw_text[i]}|***" + "\n")
                 continue
             f.write(f"{name[i]}|{raw_text[i]}|{phonemized[i]}" + "\n")
 
